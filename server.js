@@ -1,0 +1,66 @@
+require('dotenv').config();
+const express = require('express');
+const path = require('path');
+const multer = require('multer');
+const axios = require('axios');
+const FormData = require('form-data');
+const { spawn } = require('child_process');
+
+const app = express();
+const upload = multer({ storage: multer.memoryStorage() });
+
+// Start Python server automatically
+const pythonProcess = spawn('python', ['main.py']);
+
+pythonProcess.stdout.on('data', (data) => {
+    console.log(`Python: ${data}`);
+});
+
+pythonProcess.stderr.on('data', (data) => {
+    console.error(`Python Error: ${data}`);
+});
+
+process.on('exit', () => {
+    pythonProcess.kill();
+});
+
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views'));
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(express.static(path.join(__dirname, 'public')));
+
+app.get('/', (req, res) => {
+    res.render('index');
+});
+
+app.post('/upload', upload.single('file'), async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ error: 'No file uploaded' });
+        }
+
+        const formData = new FormData();
+        formData.append('file', req.file.buffer, req.file.originalname);
+
+        const response = await axios.post(`${process.env.PYTHON_API_URL}/upload`, formData, {
+            headers: formData.getHeaders()
+        });
+
+        res.json(response.data);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+const PORT = process.env.PORT || 3000;
+
+// Wait for Python server to start
+setTimeout(() => {
+    app.listen(PORT, () => {
+        console.log(`\n✅ Express Server: http://localhost:${PORT}`);
+        console.log(`✅ Python API: ${process.env.PYTHON_API_URL}`);
+        console.log(`\n🚀 Open http://localhost:${PORT} in your browser\n`);
+    });
+}, 3000);

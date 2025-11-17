@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Crowd Counter</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'inter': ['Inter', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .gradient-bg { background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%); }
+        .glow { box-shadow: 0 0 40px rgba(99, 102, 241, 0.3); }
+        .border-3 { border-width: 3px; }
+    </style>
+</head>
+<body class="gradient-bg min-h-screen">
+    <div class="container mx-auto px-4 py-8 max-w-7xl">
+        <header class="text-center mb-12">
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-4 mb-3">
+                <div class="w-14 h-14 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center glow flex-shrink-0">
+                    <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+                    </svg>
+                </div>
+                <h1 class="text-3xl sm:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">AI Crowd Counter</h1>
+            </div>
+            <p class="text-slate-400 text-base sm:text-lg font-medium">Powered by YOLOv8 Neural Network</p>
+        </header>
+
+        <div class="bg-slate-800/50 backdrop-blur-xl rounded-3xl p-4 sm:p-8 mb-8 border border-slate-700/50 shadow-2xl">
+            <div id="uploadArea" class="border-3 border-dashed border-slate-600 rounded-2xl p-8 sm:p-16 text-center transition-all duration-300 hover:border-indigo-500 hover:bg-slate-700/30 cursor-pointer">
+                <svg class="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 sm:mb-6 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                </svg>
+                <h3 class="text-xl sm:text-2xl font-bold text-white mb-2">Upload Image</h3>
+                <p class="text-slate-400 mb-4 sm:mb-6 text-sm sm:text-base" id="fileName">Drag & drop or click to browse</p>
+                <input type="file" id="imageInput" accept="image/*" class="hidden">
+                <button onclick="document.getElementById('imageInput').click()" class="bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-6 sm:px-8 py-2 sm:py-3 rounded-xl font-semibold hover:from-indigo-600 hover:to-purple-700 transition-all duration-300 shadow-lg hover:shadow-indigo-500/50 hover:scale-105 text-sm sm:text-base">
+                    Choose File
+                </button>
+            </div>
+            <button id="analyzeBtn" onclick="uploadImage()" disabled class="w-full mt-4 sm:mt-6 bg-gradient-to-r from-emerald-500 to-teal-600 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-xl font-bold text-base sm:text-lg hover:from-emerald-600 hover:to-teal-700 transition-all duration-300 shadow-lg disabled:from-slate-600 disabled:to-slate-700 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-3 hover:scale-[1.02]">
+                <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                </svg>
+                Analyze Image
+            </button>
+        </div>
+
+        <div id="loading" class="hidden bg-slate-800/50 backdrop-blur-xl rounded-3xl p-8 sm:p-16 text-center border border-slate-700/50 shadow-2xl">
+            <div class="w-16 h-16 sm:w-20 sm:h-20 border-4 border-slate-600 border-t-indigo-500 rounded-full animate-spin mx-auto mb-4 sm:mb-6"></div>
+            <p class="text-lg sm:text-xl font-semibold text-indigo-400">Analyzing image...</p>
+        </div>
+
+        <div id="results" class="hidden space-y-8">
+            <div class="bg-slate-800/50 backdrop-blur-xl rounded-3xl p-4 sm:p-8 border border-slate-700/50 shadow-2xl glow">
+                <div class="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
+                    <div class="w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center flex-shrink-0">
+                        <svg class="w-10 h-10 sm:w-12 sm:h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+                        </svg>
+                    </div>
+                    <div class="text-center sm:text-left">
+                        <h3 class="text-slate-400 text-sm font-medium mb-2">People Detected</h3>
+                        <p id="personCount" class="text-4xl sm:text-6xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">0</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8">
+                <div class="bg-slate-800/50 backdrop-blur-xl rounded-3xl overflow-hidden border border-slate-700/50 shadow-2xl hover:scale-[1.02] transition-transform duration-300">
+                    <div class="bg-slate-700/50 px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-600/50">
+                        <h3 class="text-base sm:text-lg font-semibold text-white">Original Image</h3>
+                    </div>
+                    <div class="p-4 sm:p-6 bg-slate-900/30">
+                        <img id="originalImage" class="w-full rounded-2xl shadow-xl" alt="Original">
+                    </div>
+                </div>
+
+                <div class="bg-slate-800/50 backdrop-blur-xl rounded-3xl overflow-hidden border border-slate-700/50 shadow-2xl hover:scale-[1.02] transition-transform duration-300">
+                    <div class="bg-slate-700/50 px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-600/50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                        <h3 class="text-base sm:text-lg font-semibold text-white">Detection Results</h3>
+                        <span class="bg-gradient-to-r from-indigo-500 to-purple-600 text-white text-xs font-bold px-3 sm:px-4 py-1 sm:py-1.5 rounded-full">AI Processed</span>
+                    </div>
+                    <div class="p-4 sm:p-6 bg-slate-900/30">
+                        <img id="outputImage" class="w-full rounded-2xl shadow-xl" alt="Output">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const imageInput = document.getElementById('imageInput');
+        const uploadArea = document.getElementById('uploadArea');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const fileName = document.getElementById('fileName');
+
+        imageInput.addEventListener('change', function() {
+            if (this.files && this.files[0]) {
+                analyzeBtn.disabled = false;
+                fileName.textContent = this.files[0].name;
+            }
+        });
+
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('border-indigo-500', 'bg-slate-700/30');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('border-indigo-500', 'bg-slate-700/30');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('border-indigo-500', 'bg-slate-700/30');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                imageInput.files = files;
+                analyzeBtn.disabled = false;
+                fileName.textContent = files[0].name;
+            }
+        });
+
+        async function uploadImage() {
+            const file = imageInput.files[0];
+            
+            if (!file) {
+                alert('Please select an image first!');
+                return;
+            }
+            
+            document.getElementById('loading').classList.remove('hidden');
+            document.getElementById('results').classList.add('hidden');
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('originalImage').src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+            
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    document.getElementById('loading').classList.add('hidden');
+                    document.getElementById('results').classList.remove('hidden');
+                    
+                    document.getElementById('personCount').textContent = result.person_count;
+                    document.getElementById('outputImage').src = result.output_image;
+                } else {
+                    throw new Error(result.error || 'Upload failed');
+                }
+            } catch (error) {
+                document.getElementById('loading').classList.add('hidden');
+                alert('Error: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html>
