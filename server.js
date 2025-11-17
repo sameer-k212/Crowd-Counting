@@ -59,8 +59,8 @@ const PORT = process.env.PORT || 3000;
 // Wait for Python server to start
 setTimeout(() => {
     app.listen(PORT, () => {
-        console.log(`\n✅ Express Server: http://localhost:${PORT}`);
-        console.log(`✅ Python API: ${process.env.PYTHON_API_URL}`);
-        console.log(`\n🚀 Open http://localhost:${PORT} in your browser\n`);
+        console.log(`\n Express Server: http://localhost:${PORT}`);
+        console.log(` Python API: ${process.env.PYTHON_API_URL}`);
+        console.log(`\n Open http://localhost:${PORT} in your browser\n`);
     });
 }, 3000);
